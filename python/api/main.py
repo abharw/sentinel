@@ -7,40 +7,16 @@ from pydantic import BaseModel
 
 from evaluator_manager import evaluator_manager
 from protocols import EvaluationRequest as EvalReq, EvaluationResult as EvalRes
+from api.routes.system import router as system_router
+from api.routes.evaluation import router as evaluation_router
+from models.pydantic.evaluation import (
+    EvaluationRequest, SimilarityRequest, SimilarityResponse, BatchSimilarityRequest,
+    EvaluationResponse, ComprehensiveEvaluationRequest
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class EvaluationRequest(BaseModel):
-    input_text: str
-    expected_output: str
-    actual_output: str
-    metadata: Optional[Dict[str, Any]] = None
-
-class SimilarityRequest(BaseModel):
-    text1: str
-    text2: str
-
-class SimilarityResponse(BaseModel):
-    similarity_score: float
-    metadata: Optional[Dict[str, Any]] = None
-
-class BatchSimilarityRequest(BaseModel):
-    reference_text: str
-    candidate_texts: List[str]
-    
-class EvaluationResponse(BaseModel):
-    score: float
-    passed: bool
-    details: Optional[Dict[str, Any]] = None
-    latency_ms: float
-    error: Optional[str] = None
-    
-class ComprehensiveEvaluationRequest(BaseModel):
-    requests: List[EvaluationRequest]
-    include_regression: bool = False
-    baseline_results: Optional[List[EvaluationResponse]] = None
-    
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up Sentinel API...")
@@ -65,6 +41,9 @@ app = FastAPI(
     description="API for Sentinel",
     version="0.1.0",
 )
+
+app.include_router(system_router)
+app.include_router(evaluation_router)
 
 @app.get("/")
 async def root():

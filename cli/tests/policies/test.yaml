@@ -1,0 +1,17 @@
+id: "test-policy-id"
+name: "Test Policy"
+description: "Test policy"
+severity: "critical"
+enabled: true
+conditions:
+  content_analysis:
+    check_toxicity: true
+    check_bias: true
+    toxicity_threshold: 0.8
+  keywords:
+    blocked_terms: ["violence", "hate", "illegal"]
+actions:
+  block_request: true
+  log_violation: true
+  notify_admin: true
+  send_alert: true

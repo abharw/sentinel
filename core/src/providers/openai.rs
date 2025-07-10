@@ -1,25 +1,22 @@
-use async_openai::{Client, config::OpenAIConfig, types::{CreateChatCompletionRequestArgs, ChatCompletionRequestMessage}};
-use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use anyhow::Result;
 use crate::config::CONFIG;
-
-#[derive(Debug, Clone)]
-pub struct PolicyContext {
-    pub user_id: String,
-    pub organization: String,
-    pub policy_version: String,
-    pub metadata: HashMap<String, String>,
-}
+use crate::models::policy::PolicyContext;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatCompletionRequest {
-    pub messages: Vec<ChatCompletionRequestMessage>,
+    pub messages: Vec<ChatMessage>,
     pub model: String,
     pub max_tokens: Option<u32>,
     pub temperature: Option<f32>,
     pub metadata: Option<HashMap<String, String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,7 +30,7 @@ pub struct ChatCompletionResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Choice {
     pub index: u32,
-    pub message: ChatCompletionRequestMessage,
+    pub message: ChatMessage,
     pub finish_reason: Option<String>,
 }
 
@@ -45,30 +42,13 @@ pub struct Usage {
 }
 
 pub struct OpenAIProvider {
-    client: Client,
+    // Simplified for now - will integrate with OpenAI later
 }
 
 impl OpenAIProvider {
     pub fn new() -> Result<Self> {
-        // Use shared configuration
-        let config = &CONFIG.openai;
-        
-        // Create HTTP client with config from shared config
-        let http_client = ClientBuilder::new()
-            .user_agent("sentinel-ai-governance/1.0.0")
-            .timeout(std::time::Duration::from_secs(config.timeout_secs))
-            .pool_idle_timeout(std::time::Duration::from_secs(config.pool_idle_timeout_secs))
-            .build()
-            .unwrap();
-
-        let openai_config = OpenAIConfig::new()
-            .with_api_key(&config.api_key)
-            .with_org_id(config.org_id.as_deref());
-
-        let client = Client::with_config(openai_config)
-            .with_http_client(http_client);
-
-        Ok(Self { client })
+        // Simplified for now - will integrate with OpenAI later
+        Ok(Self {})
     }
 
     pub async fn chat_completions(
@@ -76,43 +56,31 @@ impl OpenAIProvider {
         request: ChatCompletionRequest,
         policy_context: &PolicyContext,
     ) -> Result<ChatCompletionResponse> {
+        // Simplified for now - will integrate with OpenAI later
         // 1. Policy evaluation
         self.evaluate_policy(&request, policy_context)?;
         
-        // 2. Forward to OpenAI
-        let openai_request = CreateChatCompletionRequestArgs::default()
-            .model(&request.model)
-            .messages(request.messages.clone())
-            .max_tokens(request.max_tokens)
-            .temperature(request.temperature)
-            .build()?;
-
-        let response = self.client.chat().create(openai_request).await?;
-        
-        // 3. Content filtering
-        self.filter_response(&response)?;
-        
-        // 4. Audit logging
-        self.log_request(&request, &response, policy_context).await?;
-        
-        // 5. Convert to our response format
-        let choices = response.choices.into_iter().map(|choice| Choice {
-            index: choice.index,
-            message: choice.message,
-            finish_reason: choice.finish_reason,
-        }).collect();
+        // 2. Mock response for now
+        let choices = vec![Choice {
+            index: 0,
+            message: ChatMessage {
+                role: "assistant".to_string(),
+                content: "This is a mock response. Real implementation will proxy to OpenAI.".to_string(),
+            },
+            finish_reason: Some("stop".to_string()),
+        }];
 
         let usage = Usage {
-            prompt_tokens: response.usage.prompt_tokens,
-            completion_tokens: response.usage.completion_tokens,
-            total_tokens: response.usage.total_tokens,
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
         };
 
         Ok(ChatCompletionResponse {
-            id: response.id,
+            id: "mock-123".to_string(),
             choices,
             usage,
-            model: response.model,
+            model: request.model,
         })
     }
 
@@ -126,7 +94,7 @@ impl OpenAIProvider {
         Ok(())
     }
 
-    fn filter_response(&self, response: &async_openai::types::CreateChatCompletionResponse) -> Result<()> {
+    fn filter_response(&self, _response: &ChatCompletionResponse) -> Result<()> {
         // TODO: Implement content filtering
         // - Check for harmful content
         // - Apply content policies
@@ -138,7 +106,7 @@ impl OpenAIProvider {
     async fn log_request(
         &self,
         request: &ChatCompletionRequest,
-        response: &async_openai::types::CreateChatCompletionResponse,
+        _response: &ChatCompletionResponse,
         context: &PolicyContext,
     ) -> Result<()> {
         // TODO: Implement audit logging

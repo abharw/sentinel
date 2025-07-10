@@ -14,38 +14,77 @@ use commands::validate;
 
 #[derive(Parser)]
 #[command(name = "sentinel")]
-#[command(about = "AI Governance CLI")]
+#[command(about = "AI Governance CLI - Manage policies and validate content")]
 #[command(version = "1.0.0")]
+#[command(propagate_version = true)]
 struct Cli {
+    /// URL of the Sentinel API server
     #[arg(long, default_value = "http://localhost:8080")]
     server_url: String,
+
+    /// Enable verbose logging
+    #[arg(short, long)]
+    verbose: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Validate policy files for syntax and structure
+    Validate {
+        /// Path to the policy file to validate
+        file: PathBuf,
+    },
+
+    /// Manage policies (create, list, update, delete)
     Policy {
         #[command(subcommand)]
         action: PolicyAction,
     },
+
+    /// Monitor system health and status
     Monitor {
+        /// Enable live monitoring mode
         #[arg(long)]
         live: bool,
     },
-    Validate {
-        file: PathBuf,
-    },
+
+    /// Check system health
     Health,
 }
 
 #[derive(Subcommand)]
 enum PolicyAction {
+    /// List all policies
     List,
-    Create { file: PathBuf },
-    Get { id: String },
-    Update { id: String, file: PathBuf },
-    Delete { id: String },
+
+    /// Create a new policy from file
+    Create {
+        /// Path to the policy file
+        file: PathBuf,
+    },
+
+    /// Get details of a specific policy
+    Get {
+        /// Policy ID
+        id: String,
+    },
+
+    /// Update an existing policy
+    Update {
+        /// Policy ID
+        id: String,
+        /// Path to the updated policy file
+        file: PathBuf,
+    },
+
+    /// Delete a policy
+    Delete {
+        /// Policy ID
+        id: String,
+    },
 }
 
 #[tokio::main]
@@ -54,8 +93,8 @@ async fn main() -> anyhow::Result<()> {
     let client = SentinelClient::new(cli.server_url);
 
     match cli.command {
-        Commands::Health => {
-            health::execute(&client).await?;
+        Commands::Validate { file } => {
+            validate::execute(&file)?;
         }
         Commands::Policy { action } => match action {
             PolicyAction::List => {
@@ -77,8 +116,8 @@ async fn main() -> anyhow::Result<()> {
         Commands::Monitor { live } => {
             monitor::execute(live).await?;
         }
-        Commands::Validate { file } => {
-            validate::execute(&file)?;
+        Commands::Health => {
+            health::execute(&client).await?;
         }
     }
     Ok(())

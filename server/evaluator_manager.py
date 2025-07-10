@@ -11,6 +11,8 @@ from protocols import (
 
 from evaluators.semantic import SemanticEvaluator
 from evaluators.performance import PerformanceEvaluator
+from evaluators.content_safety import ContentSafetyEvaluator
+from evaluators.keyword_filter import KeywordFilterEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,8 @@ class EvaluatorManager:
     def __init__(self):
         self.semantic_evaluator: Optional[SemanticEvaluator] = None
         self.performance_evaluator: Optional[PerformanceEvaluator] = None
+        self.content_safety_evaluator: Optional[ContentSafetyEvaluator] = None
+        self.keyword_filter_evaluator: Optional[KeywordFilterEvaluator] = None
         self.quality_evaluator: Optional[BaseEvaluatorProtocol] = None # TODO: Implement quality evaluator
         self.regression_evaluator: Optional[BaseEvaluatorProtocol] = None # TODO: Implement regression evaluator
         self._initialization_time_ms = 0.0
@@ -34,10 +38,14 @@ class EvaluatorManager:
             logger.info("Starting to load evaluators...")
             self.semantic_evaluator = SemanticEvaluator()
             self.performance_evaluator = PerformanceEvaluator()
+            self.content_safety_evaluator = ContentSafetyEvaluator()
+            self.keyword_filter_evaluator = KeywordFilterEvaluator()
             # will be loaded in parallel
             tasks = [
                 self.semantic_evaluator.load(),
-                self.performance_evaluator.load()
+                self.performance_evaluator.load(),
+                self.content_safety_evaluator.load(),
+                self.keyword_filter_evaluator.load()
                 # add other evaluators here
             ]
             
@@ -62,6 +70,12 @@ class EvaluatorManager:
         if self.performance_evaluator and self.performance_evaluator.loaded:
             tasks.append(self.performance_evaluator.unload())
         
+        if self.content_safety_evaluator and self.content_safety_evaluator.loaded:
+            tasks.append(self.content_safety_evaluator.unload())
+        
+        if self.keyword_filter_evaluator and self.keyword_filter_evaluator.loaded:
+            tasks.append(self.keyword_filter_evaluator.unload())
+        
         if self.quality_evaluator and self.quality_evaluator.loaded:
             tasks.append(self.quality_evaluator.unload())
         
@@ -81,6 +95,12 @@ class EvaluatorManager:
             
         if self.performance_evaluator and self.performance_evaluator.loaded:
             results["performance"] = await self.performance_evaluator.health_check()
+            
+        if self.content_safety_evaluator and self.content_safety_evaluator.loaded:
+            results["content_safety"] = await self.content_safety_evaluator.health_check()
+            
+        if self.keyword_filter_evaluator and self.keyword_filter_evaluator.loaded:
+            results["keyword_filter"] = await self.keyword_filter_evaluator.health_check()
             
         if self.quality_evaluator and self.quality_evaluator.loaded:
             results["quality"] = await self.quality_evaluator.health_check()
@@ -154,6 +174,12 @@ class EvaluatorManager:
         
         if self.performance_evaluator:
             info["evaluators"]["performance"] = self.performance_evaluator.get_model_info().__dict__
+        
+        if self.content_safety_evaluator:
+            info["evaluators"]["content_safety"] = self.content_safety_evaluator.get_model_info().__dict__
+        
+        if self.keyword_filter_evaluator:
+            info["evaluators"]["keyword_filter"] = self.keyword_filter_evaluator.get_model_info().__dict__
         
         if self.quality_evaluator:
             info["evaluators"]["quality"] = self.quality_evaluator.get_model_info().__dict__

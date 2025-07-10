@@ -1,4 +1,4 @@
-use sentinel::client::PolicyRunner;
+use sentinel::policy::runner::PolicyRunner;
 use std::path::PathBuf;
 
 #[test]

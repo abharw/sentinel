@@ -28,6 +28,7 @@ class PolicyCreate(BaseModel):
     enabled: bool
     conditions: Dict[str, Any]
     actions: Dict[str, Any]
+    provider: str
 
 class PolicyResponse(BaseModel):
     id: str
@@ -37,6 +38,7 @@ class PolicyResponse(BaseModel):
     enabled: bool
     conditions: Dict[str, Any]
     actions: Dict[str, Any]
+    provider: str
     created_at: str
     updated_at: str
 

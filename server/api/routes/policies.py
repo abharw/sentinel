@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-from models.pydantic.policy import PolicyCreate, PolicyResponse
+from models.pydantic.policy import PolicyCreate, PolicyResponse, PolicyCheckRequest, PolicyCheckResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ async def list_policies():
 async def create_policy(policy: PolicyCreate):
     """Create a new policy"""
     try:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now().isoformat()
         policy_data = {
             "id": policy.id,
             "name": policy.name,
@@ -91,7 +91,7 @@ async def get_policy(policy_id: str):
 async def update_policy(policy_id: str, policy: PolicyCreate):
     """Update an existing policy"""
     try:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now().isoformat()
         policy_data = {
             "id": policy.id,
             "name": policy.name,
@@ -143,3 +143,112 @@ async def delete_policy(policy_id: str):
     except Exception as e:
         logger.error(f"Failed to delete policy {policy_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e)) 
+    
+@router.post("/policies/guard/{policy_id}", response_model=PolicyCheckResponse)
+async def check_policy(policy_id: str, request: PolicyCheckRequest):
+    """Check a policy against request data"""
+    try:
+        from services.policy_runner import PolicyRunner
+        
+        # Get policy from database
+        policy_doc = await policies_collection.find_one({"id": policy_id})
+        if not policy_doc:
+            raise HTTPException(status_code=404, detail="Policy not found")
+        
+        policy = PolicyResponse(**policy_doc)
+        
+        # Initialize and load policy runner
+        runner = PolicyRunner()
+        await runner.load()
+        
+        # Prepare request data
+        request_data = {
+            "input_text": request.input_text,
+            "expected_output": request.expected_output,
+            "metadata": request.metadata or {}
+        }
+        
+        # Evaluate policy
+        result = await runner.evaluate_policy(policy, request_data)
+        
+        # Convert violations to serializable format
+        violations = []
+        for violation in result.violations:
+            violations.append({
+                "policy_id": violation.policy_id,
+                "policy_name": violation.policy_name,
+                "reason": violation.reason,
+                "severity": violation.severity,
+                "details": violation.details,
+                "timestamp": violation.timestamp
+            })
+        
+        return PolicyCheckResponse(
+            decision=result.decision.value,
+            violations=violations,
+            metadata=result.metadata
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to check policy {policy_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/policies/guard/batch", response_model=PolicyCheckResponse)
+async def check_policies_batch(request: PolicyCheckRequest, provider: Optional[str] = None):
+    """Check all enabled policies for a provider"""
+    try:
+        from services.policy_runner import PolicyRunner
+        
+        # Get all enabled policies for the provider
+        query: Dict[str, Any] = {"enabled": True}
+        if provider:
+            query["provider"] = provider
+        
+        policies = []
+        async for policy_doc in policies_collection.find(query):
+            policies.append(PolicyResponse(**policy_doc))
+        
+        if not policies:
+            return PolicyCheckResponse(
+                decision="allow",
+                violations=[],
+                metadata={"reason": "No policies found"}
+            )
+        
+        # Initialize and load policy runner
+        runner = PolicyRunner()
+        await runner.load()
+        
+        # Prepare request data
+        request_data = {
+            "input_text": request.input_text,
+            "expected_output": request.expected_output,
+            "metadata": request.metadata or {}
+        }
+        
+        # Evaluate all policies
+        result = await runner.evaluate_policies(policies, request_data)
+        
+        # Convert violations to serializable format
+        violations = []
+        for violation in result.violations:
+            violations.append({
+                "policy_id": violation.policy_id,
+                "policy_name": violation.policy_name,
+                "reason": violation.reason,
+                "severity": violation.severity,
+                "details": violation.details,
+                "timestamp": violation.timestamp
+            })
+        
+        return PolicyCheckResponse(
+            decision=result.decision.value,
+            violations=violations,
+            metadata=result.metadata
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to check policies batch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

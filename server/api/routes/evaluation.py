@@ -59,6 +59,54 @@ async def evaluate_semantic(request: EvaluationRequest):
         logger.error(f"Semantic evaluation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/evaluate/content_safety", response_model=EvaluationResponse)
+async def evaluate_content_safety(request: EvaluationRequest):
+    """Evaluate content for toxicity and harmful content"""
+    try:
+        if not evaluator_manager.content_safety_evaluator or not evaluator_manager.content_safety_evaluator.loaded:
+            raise HTTPException(status_code=503, detail="Content safety model not loaded")
+        eval_request = EvalReq(
+            input_text=request.input_text,
+            expected_output=request.expected_output,
+            actual_output=request.actual_output,
+            metadata=request.metadata or {}
+        )
+        result = await evaluator_manager.content_safety_evaluator.evaluate_content_safety(eval_request)
+        return EvaluationResponse(
+            score=result.score,
+            passed=result.passed,
+            details=result.details,
+            latency_ms=result.latency_ms,
+            error=result.error
+        )
+    except Exception as e:
+        logger.error(f"Content safety evaluation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/evaluate/keyword_filter", response_model=EvaluationResponse)
+async def evaluate_keyword_filter(request: EvaluationRequest):
+    """Evaluate content for banned keywords"""
+    try:
+        if not evaluator_manager.keyword_filter_evaluator or not evaluator_manager.keyword_filter_evaluator.loaded:
+            raise HTTPException(status_code=503, detail="Keyword filter not loaded")
+        eval_request = EvalReq(
+            input_text=request.input_text,
+            expected_output=request.expected_output,
+            actual_output=request.actual_output,
+            metadata=request.metadata or {}
+        )
+        result = await evaluator_manager.keyword_filter_evaluator.evaluate_keyword_filter(eval_request)
+        return EvaluationResponse(
+            score=result.score,
+            passed=result.passed,
+            details=result.details,
+            latency_ms=result.latency_ms,
+            error=result.error
+        )
+    except Exception as e:
+        logger.error(f"Keyword filter evaluation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/evaluate/performance", response_model=EvaluationResponse)
 async def evaluate_performance(request: EvaluationRequest):
     try:

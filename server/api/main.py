@@ -11,6 +11,7 @@ from api.routes.system import router as system_router
 from api.routes.evaluation import router as evaluation_router
 from api.routes.chat import router as chat_router
 from api.routes.policies import router as policies_router
+from api.routes.llm_proxy import router as llm_proxy_router
 from models.pydantic.evaluation import (
     EvaluationRequest, SimilarityRequest, SimilarityResponse, BatchSimilarityRequest,
     EvaluationResponse, ComprehensiveEvaluationRequest
@@ -48,6 +49,7 @@ app.include_router(system_router)
 app.include_router(evaluation_router)
 app.include_router(chat_router)
 app.include_router(policies_router)
+app.include_router(llm_proxy_router)
 
 # Development server entry point
 if __name__ == "__main__":

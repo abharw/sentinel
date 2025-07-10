@@ -1,4 +1,4 @@
-from typing import Protocol, Dict, Any, Optional, List, Union
+from typing import Protocol, Dict, Any, Optional, List
 from dataclasses import dataclass, field
 
 @dataclass
@@ -100,6 +100,26 @@ class QualityEvaluatorProtocol(BaseEvaluatorProtocol, Protocol):
         ...
     
     async def evaluate_language(self, text: str, expected_language: str = "en") -> EvaluationResult:
+        ...
+
+class ContentSafetyEvaluatorProtocol(BaseEvaluatorProtocol, Protocol):
+    
+    async def check_toxicity(self, text: str) -> Dict[str, float]:
+        """Check toxicity levels in text"""
+        ...
+    
+    async def evaluate_content_safety(self, request: EvaluationRequest) -> EvaluationResult:
+        """Evaluate content for safety (toxicity, harm, etc.)"""
+        ...
+
+class KeywordFilterEvaluatorProtocol(BaseEvaluatorProtocol, Protocol):
+    
+    async def check_keywords(self, text: str) -> Dict[str, Any]:
+        """Check for banned keywords in text"""
+        ...
+    
+    async def evaluate_keyword_filter(self, request: EvaluationRequest) -> EvaluationResult:
+        """Evaluate content for banned keywords"""
         ...
 
 class RegressionDetectorProtocol(BaseEvaluatorProtocol, Protocol):

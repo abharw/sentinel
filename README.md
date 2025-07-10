@@ -316,10 +316,6 @@ CMD ["python", "run_api.py"]
 - **Python**: Use Black for formatting, flake8 for linting
 - **Documentation**: Update README and add docstrings for new features
 
-## License
-
-[Add your license information here]
-
 ## Support
 
 For issues and questions:

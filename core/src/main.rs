@@ -89,10 +89,8 @@ enum PolicyAction {
 
     /// Validate content against a policy
     Guard {
-        /// Path to the policy file
-        policy: PathBuf,
-        /// Provider to use for the policy engine
-        provider: Provider,
+        /// Policy ID
+        id: String,
     },
 }
 
@@ -121,8 +119,8 @@ async fn main() -> anyhow::Result<()> {
             PolicyAction::Delete { id } => {
                 policy::delete(&client, &id).await?;
             }
-            PolicyAction::Guard { policy, provider } => {
-                policy::guard(&client, policy, provider).await?;
+            PolicyAction::Guard { id } => {
+                policy::guard(&client, &id).await?;
             }
         },
         Commands::Monitor { live } => {

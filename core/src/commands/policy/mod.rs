@@ -26,8 +26,7 @@ pub async fn delete(client: &SentinelClient, id: &str) -> anyhow::Result<()> {
 
 pub async fn guard(
     client: &SentinelClient,
-    policy: PathBuf,
-    provider: Provider,
+    id: &str,
 ) -> anyhow::Result<()> {
-    client.check_policy(policy, provider).await
+    client.check_policy(id).await
 }

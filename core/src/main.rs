@@ -11,6 +11,7 @@ use commands::health;
 use commands::monitor;
 use commands::policy;
 use commands::validate;
+use models::providers::Provider;
 
 #[derive(Parser)]
 #[command(name = "sentinel")]
@@ -85,6 +86,14 @@ enum PolicyAction {
         /// Policy ID
         id: String,
     },
+
+    /// Validate content against a policy
+    Guard {
+        /// Path to the policy file
+        policy: PathBuf,
+        /// Provider to use for the policy engine
+        provider: Provider,
+    },
 }
 
 #[tokio::main]
@@ -111,6 +120,9 @@ async fn main() -> anyhow::Result<()> {
             }
             PolicyAction::Delete { id } => {
                 policy::delete(&client, &id).await?;
+            }
+            PolicyAction::Guard { policy, provider } => {
+                policy::guard(&client, policy, provider).await?;
             }
         },
         Commands::Monitor { live } => {

@@ -1,5 +1,7 @@
 // use crate::client::SentinelClient;
-use crate::models::policy::Policy;
+use crate::models::policy::{Policy, PolicyAction, PolicyCondition};
+use crate::policy::action::ActionRunner;
+use crate::policy::condition::ConditionRunner;
 use colored::*;
 use serde_yaml;
 use std::fs::File;
@@ -20,8 +22,8 @@ impl PolicyRunner {
         })
     }
 
-    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // For now, just validate that the policy can be parsed
+    pub async fn run(&self, content: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // For now, we can just validate that the policy can be parsed
         let _policy_runner = PolicyRunner::new(self.policy_path.clone())?;
         println!("Policy validation successful");
         if self.parsed_policy.enabled {
@@ -37,7 +39,7 @@ impl PolicyRunner {
                     )
                     .green()
                 );
-                self.run_conditions()?;
+                self.run_conditions(content).await?;
             }
             if self.parsed_policy.actions.is_null() {
                 println!("{}", "Policy has no actions".yellow());
@@ -51,7 +53,7 @@ impl PolicyRunner {
                     )
                     .green()
                 );
-                self.run_actions()?;
+                self.run_actions().await?;
             }
         } else {
             println!("{}", "Policy is disabled".yellow());
@@ -60,18 +62,30 @@ impl PolicyRunner {
         Ok(())
     }
 
-    fn run_conditions(&self) -> Result<(), Box<dyn std::error::Error>> {
-        for condition in self.parsed_policy.conditions.as_object().unwrap().keys() {
-            println!("{}", format!("Running condition: {}", condition).green());
+    async fn run_conditions(&self, content: &str) -> Result<(), Box<dyn std::error::Error>> {
+        for (condition_name, condition_value) in self.parsed_policy.conditions.as_object().unwrap()
+        {
+            println!(
+                "{}",
+                format!("Running condition: {}", condition_name).green()
+            );
+            let condition = PolicyCondition {
+                name: condition_name.clone(),
+                parameters: condition_value.clone(),
+            };
             let condition_runner = ConditionRunner::new(condition);
-            condition_runner.run()?;
+            condition_runner.run(content).await?;
         }
         Ok(())
     }
 
-    fn run_actions(&self) -> Result<(), Box<dyn std::error::Error>> {
-        for action in self.parsed_policy.actions.as_object().unwrap().keys() {
-            println!("{}", format!("Running action: {}", action).green());
+    async fn run_actions(&self) -> Result<(), Box<dyn std::error::Error>> {
+        for (action_name, action_value) in self.parsed_policy.actions.as_object().unwrap() {
+            println!("{}", format!("Running action: {}", action_name).green());
+            let action = PolicyAction {
+                name: action_name.clone(),
+                parameters: action_value.clone(),
+            };
             let action_runner = ActionRunner::new(action);
             action_runner.run()?;
         }

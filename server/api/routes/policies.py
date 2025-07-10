@@ -57,7 +57,8 @@ async def list_policies():
                 conditions=policy_doc["conditions"],
                 actions=policy_doc["actions"],
                 created_at=policy_doc["created_at"],
-                updated_at=policy_doc["updated_at"]
+                updated_at=policy_doc["updated_at"],
+                provider=policy_doc["provider"]
             ))
         return policies
     except Exception as e:
@@ -78,7 +79,8 @@ async def create_policy(policy: PolicyCreate):
             "conditions": policy.conditions,
             "actions": policy.actions,
             "created_at": now,
-            "updated_at": now
+            "updated_at": now,
+            "provider": policy.provider
         }
         
         await policies_collection.insert_one(policy_data)
@@ -118,7 +120,8 @@ async def update_policy(policy_id: str, policy: PolicyCreate):
             "enabled": policy.enabled,
             "conditions": policy.conditions,
             "actions": policy.actions,
-            "updated_at": now
+            "updated_at": now,
+            "provider": policy.provider
         }
         
         # Keep original creation time

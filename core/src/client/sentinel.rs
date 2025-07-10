@@ -161,29 +161,18 @@ impl SentinelClient {
         Ok(())
     }
 
-    pub async fn check_policy(&self, policy: PathBuf, provider: Provider) -> anyhow::Result<()> {
-        let policy_content = std::fs::read_to_string(policy)?;
-        let policy_file: PolicyFile = serde_yaml::from_str(&policy_content)?;
-        let policy = Policy {
-            id: Uuid::new_v4().to_string(),
-            name: policy_file.name,
-            description: policy_file.description,
-            severity: policy_file.severity,
-            enabled: policy_file.enabled,
-            provider: provider,
-            conditions: policy_file.conditions,
-            actions: policy_file.actions,
-        };
-
+    pub async fn check_policy(&self, id:&str) -> anyhow::Result<()> {
+        
         let response = self
             .client
-            .post(&format!("{}/policies/guard", self.base_url))
-            .json(&policy)
+            .post(&format!("{}/policies/guard/{}", self.base_url, id))
+            .json(&id)
             .send()
             .await?;
 
         if response.status().is_success() {
             println!("{}", "✓ Policy checked successfully".green());
+            println!("{}", response.text().await?);
         } else {
             println!("{}", "Failed to check policy".red());
         }

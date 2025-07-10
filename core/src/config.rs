@@ -1,6 +1,5 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,6 +23,7 @@ pub struct ServerConfig {
     pub default_org: String,
     pub database_url: Option<String>,
     pub redis_url: Option<String>,
+    pub api_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,6 +97,8 @@ impl ServerConfig {
             default_org: std::env::var("DEFAULT_ORG").unwrap_or_else(|_| "default".to_string()),
             database_url: std::env::var("SENTINEL_DATABASE_URL").ok(),
             redis_url: std::env::var("SENTINEL_REDIS_URL").ok(),
+            api_url: std::env::var("FASTAPI_URL")
+                .unwrap_or_else(|_| "http://localhost:8080".to_string()),
         })
     }
 }

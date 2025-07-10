@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tabled::Tabled;
+use crate::models::providers::Provider;
 
 #[derive(Debug, Serialize, Deserialize, Tabled)]
 pub struct Policy {
@@ -9,6 +10,7 @@ pub struct Policy {
     pub description: String,
     pub severity: String,
     pub enabled: bool,
+    pub provider: Provider,
     #[tabled(skip)]
     pub conditions: serde_json::Value,
     #[tabled(skip)]
@@ -24,6 +26,7 @@ pub struct PolicyFile {
     pub enabled: bool,
     pub conditions: serde_json::Value,
     pub actions: serde_json::Value,
+    pub provider: Provider,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

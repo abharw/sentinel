@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
+from models.pydantic.policy import PolicyCreate, PolicyResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -20,27 +21,6 @@ client = AsyncIOMotorClient(mongodb_uri)
 db = client.sentinel
 policies_collection = db.policies
 
-class PolicyCreate(BaseModel):
-    id: str
-    name: str
-    description: str
-    severity: str
-    enabled: bool
-    conditions: Dict[str, Any]
-    actions: Dict[str, Any]
-    provider: str
-
-class PolicyResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    severity: str
-    enabled: bool
-    conditions: Dict[str, Any]
-    actions: Dict[str, Any]
-    provider: str
-    created_at: str
-    updated_at: str
 
 @router.get("/policies", response_model=List[PolicyResponse])
 async def list_policies():

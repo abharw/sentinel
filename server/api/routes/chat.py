@@ -5,28 +5,11 @@ import logging
 import subprocess
 import json
 import os
+from models.pydantic.chat import ChatCompletionRequest, ChatCompletionResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-class ChatMessage(BaseModel):
-    role: str
-    content: str
-
-class ChatCompletionRequest(BaseModel):
-    model: str
-    messages: List[ChatMessage]
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
-    user: Optional[str] = None
-
-class ChatCompletionResponse(BaseModel):
-    id: str
-    object: str = "chat.completion"
-    created: int
-    model: str
-    choices: List[Dict[str, Any]]
-    usage: Dict[str, int]
 
 def get_policy_context(user: Optional[str] = None) -> Dict[str, Any]:
     """Extract policy context from request"""

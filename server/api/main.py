@@ -10,6 +10,7 @@ from protocols import EvaluationRequest as EvalReq, EvaluationResult as EvalRes
 from api.routes.system import router as system_router
 from api.routes.evaluation import router as evaluation_router
 from api.routes.chat import router as chat_router
+from api.routes.policies import router as policies_router
 from models.pydantic.evaluation import (
     EvaluationRequest, SimilarityRequest, SimilarityResponse, BatchSimilarityRequest,
     EvaluationResponse, ComprehensiveEvaluationRequest
@@ -46,6 +47,7 @@ app = FastAPI(
 app.include_router(system_router)
 app.include_router(evaluation_router)
 app.include_router(chat_router)
+app.include_router(policies_router)
 
 # Development server entry point
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ pub fn execute(file_path: &PathBuf) -> anyhow::Result<()> {
     println!("  Description: {}", policy.description);
     println!("  Severity: {}", policy.severity);
     println!("  Enabled: {}", policy.enabled);
+    println!("  Provider: {}", policy.provider);
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 use crate::client::SentinelClient;
+use crate::models::providers::Provider;
 use colored::*;
 use std::path::PathBuf;
 
@@ -23,4 +24,10 @@ pub async fn delete(client: &SentinelClient, id: &str) -> anyhow::Result<()> {
     client.delete_policy(id).await
 }
 
-
+pub async fn guard(
+    client: &SentinelClient,
+    policy: PathBuf,
+    provider: Provider,
+) -> anyhow::Result<()> {
+    client.check_policy(policy, provider).await
+}
